@@ -1,36 +1,17 @@
 package akkaio
 
-import java.io.File
-import java.nio.file.StandardOpenOption._
-import scala.concurrent.duration._
-import scala.util.{Failure, Success}
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, IOResult}
-import akka.util.ByteString
+import scala.concurrent._
+import akka._
+import akka.actor._
 import akka.stream._
 import akka.stream.scaladsl._
-
-import scala.concurrent.Future
-import akka.NotUsed
-import akka.Done
-
-
-
-
-//import scala.util.{Failure, Success}
+import akka.util._
+import java.io.File
+import java.nio.file.StandardOpenOption._
+import scala.util.{Try, Success, Failure}
 
 object MainApp2{
-
-  /**
-    * Use without parameters to start both client and
-    * server.
-    *
-    * Use parameters `server 0.0.0.0 6001` to start server listening on port 6001.
-    *
-    * Use parameters `client 127.0.0.1 6001` to start client connecting to
-    * server on 127.0.0.1:6001.
-    *
-    */
+/*
   def main(args: Array[String]): Unit = {
 
     val systemServer= ActorSystem("Server")
@@ -61,15 +42,16 @@ object MainApp2{
 
     //Flow.fromSinkAndSourceMat(FileIO.toFile(storageFile, options=Set(CREATE, WRITE)), Source.repeat(ByteString.empty))(Keep.left)
     val connections = Tcp().bind(address, port)
-    val binding = connections.to(handler).run()
+    //val binding = connections.to(handler).run()
+    connections.runForEach{connection => connection.flow.toMat(FileIO.toFile(output, options=Set(CREATE, WRITE)))(Keep.right)}
 
-    binding.onComplete {
+    /*binding.onComplete {
       case Success(b) =>
         println("Server started, listening on: " + b.localAddress)
       case Failure(e) =>
         println(s"Server could not bind to $address:$port: ${e.getMessage}")
         system.terminate()
-    }
+    }*/
 
   }
 
@@ -164,5 +146,5 @@ object MainApp2{
         println(s"Error in client: ${e.getMessage}")
     }
   }
-
+*/
 }
