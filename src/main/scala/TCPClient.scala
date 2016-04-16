@@ -5,13 +5,11 @@ import akka.stream._
 import akka.stream.scaladsl.{Tcp, _}
 import akka.util._
 import java.io.File
-import java.nio.file.StandardOpenOption._
-
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 object TCPClient extends App {
 
-  val systemClient= ActorSystem("Client")
+  val systemClient= ActorSystem("SendingClient")
   val serverAddress = "127.0.0.1"
   val serverPort = 6002
 
@@ -23,36 +21,27 @@ object TCPClient extends App {
     implicit val materializer = ActorMaterializer()
 
     val inputFile= new File("src/main/resources/medium.csv")
-
+    val fileSize = inputFile.length
     val testInput= FileIO.fromFile(inputFile)
-
 
     /**
       * My RunnableGraph is:
-      *  Source     ~>            Flow            ~>      Sink
-      * testInput      Tcp().OutgoingConnection()       Sink.ignore
-      *
+      *  Source     ~>            Flow             ~>           Sink
+      * testInput      Tcp().OutgoingConnection()         totalTransferredBytes
+      *                                               where totalTransferredBytes += sizeof(x)
+      *                                               with x as the incoming ByteStreams
       */
-    //val src= SynchronousFileSource.
 
-    val printResults= Flow[ByteString] to Sink.foreach(x => println(x.toString()))
     val result = testInput.via(Tcp().outgoingConnection(address, port)).runFold(ByteString.empty) { (acc, in) ⇒ acc ++ in }
 
     result.onComplete{
       case Success(result) =>
-        println(s"Result: " + result.utf8String)
+        println(s"Transferred Bytes: ${result.utf8String} - filesize: $fileSize")
         println("Shutting down client")
         system.terminate()
       case Failure(e) =>
         println(s"Error in client: ${e.getMessage}")
         system.terminate()
     }
-
-
-    //val sendFileFlow = Flow.fromSinkAndSourceMat(Sink.ignore, FileIO.fromFile(inputFile))(Keep.right)
-
   }
-
-
-
 }
